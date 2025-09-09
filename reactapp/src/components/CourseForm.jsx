@@ -13,13 +13,13 @@ export default function CourseForm() {
         const course = {
             title,
             description,
-            quiz: lines,
+            quizQuestions: lines,
         };
         await api.addCourse(course);
         setTitle("");
         setDescription("");
         setQuizText("");
-        window.alert("Enrolled successfully!");
+        window.alert("Course added!");
     };
     return (
         <div style={{ padding: 40, display: "flex", justifyContent: "center" }}>
