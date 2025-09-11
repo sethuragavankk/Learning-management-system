@@ -2,8 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import './Home.css';
 
-const Home = ({ courses, loading, error }) => {
-  const featuredCourses = courses.slice(0, 3);
+const Home = ({ courses = [], loading = false, error = null }) => {
+  // Ensure courses is always an array and get featured courses
+  const featuredCourses = React.useMemo(() => {
+    if (!Array.isArray(courses)) {
+      return [];
+    }
+    return courses.slice(0, 3);
+  }, [courses]);
 
   return (
     <div>
@@ -23,34 +29,47 @@ const Home = ({ courses, loading, error }) => {
         {/* Error message display */}
         {error && (
           <div className="error-message">
-            Error: [Error - You need to specify the message]
+            [Error - You need to specify the message]
           </div>
         )}
         
         {/* Loading indicator */}
         {loading && <div className="loading">Loading courses...</div>}
         
-        <div className="courses-grid">
-          {/* Course Cards */}
-          {featuredCourses.map(course => (
-            <div key={course.id} className="course-card">
-              <div className="course-image">
-                <i className="fas fa-laptop-code"></i>
-              </div>
-              <div className="course-content">
-                <h3 className="course-title">{course.title}</h3>
-                <p className="course-description">{course.description}</p>
-                <div className="course-meta">
-                  <span><i className="fas fa-users"></i> {course.enrolledCount || 50} students</span>
-                  <span><i className="fas fa-star"></i> 4.8</span>
+        {/* Courses Grid */}
+        {!loading && !error && (
+          <div className="courses-grid">
+            {featuredCourses.map(course => (
+              <div key={course.id} className="course-card">
+                <div className="course-image">
+                  <i className="fas fa-laptop-code"></i>
                 </div>
-                <div className="course-actions">
-                  <Link to="/courses" className="btn btn-primary">View Details</Link>
+                <div className="course-content">
+                  <h3 className="course-title">{course.courseName || course.title || 'Unnamed Course'}</h3>
+                  <p className="course-description">
+                    {course.description || 'Comprehensive course covering essential topics and skills.'}
+                  </p>
+                  <div className="course-meta">
+                    <span><i className="fas fa-users"></i> {course.enrolledCount || 50} students</span>
+                    <span><i className="fas fa-star"></i> {course.rating || '4.8'}</span>
+                  </div>
+                  <div className="course-actions">
+                    <Link to="/courses" className="btn btn-primary">View Details</Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
+        {/* Empty state when no courses available */}
+        {!loading && !error && featuredCourses.length === 0 && (
+          <div className="empty-state">
+            <i className="fas fa-book-open"></i>
+            <h3>No courses available</h3>
+            <p>Check back later for new courses.</p>
+          </div>
+        )}
+
         {/* Call to Action */}
         <div className="cta-section">
           <h2>Start Your Learning Journey Today</h2>

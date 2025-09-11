@@ -1,25 +1,46 @@
 import React, { useState } from 'react';
 import { FaEye, FaEyeSlash, FaGoogle, FaGithub, FaLinkedin } from 'react-icons/fa';
+import { authAPI } from '../services/api';
 import './Auth.css';
 
-const Login = () => {
+const Login = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
+    setError('');
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Login data:', formData);
-    // Add your login logic here
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await authAPI.login({
+        email: formData.email,
+        password: formData.password
+      });
+
+      // Store token and user data
+      localStorage.setItem('token', response.accessToken);
+      localStorage.setItem('user', JSON.stringify(response));
+      
+      onLogin(response);
+    } catch (err) {
+      setError('Invalid email or password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -29,6 +50,8 @@ const Login = () => {
           <h2>Welcome Back</h2>
           <p>Sign in to continue your learning journey</p>
         </div>
+
+        {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
@@ -41,9 +64,9 @@ const Login = () => {
               onChange={handleChange}
               placeholder="Enter your email"
               required
+              disabled={loading}
             />
           </div>
-
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <div className="password-input">
@@ -55,6 +78,7 @@ const Login = () => {
                 onChange={handleChange}
                 placeholder="Enter your password"
                 required
+                disabled={loading}
               />
               <span 
                 className="password-toggle"
@@ -67,7 +91,14 @@ const Login = () => {
               <a href="#">Forgot password?</a>
             </div>
           </div>
-          <button type="submit" className="btn btn-primary btn-full">Sign In</button>
+          
+          <button 
+            type="submit" 
+            className="btn btn-primary btn-full"
+            disabled={loading}
+          >
+            {loading ? 'Signing In...' : 'Sign In'}
+          </button>
         </form>
 
         <div className="auth-divider">
@@ -75,13 +106,13 @@ const Login = () => {
         </div>
 
         <div className="social-auth">
-          <button className="btn btn-google">
+          <button className="btn btn-google" disabled={loading}>
             <FaGoogle /> Google
           </button>
-          <button className="btn btn-github">
+          <button className="btn btn-github" disabled={loading}>
             <FaGithub /> GitHub
           </button>
-          <button className="btn btn-linkedin">
+          <button className="btn btn-linkedin" disabled={loading}>
             <FaLinkedin /> LinkedIn
           </button>
         </div>
@@ -94,7 +125,7 @@ const Login = () => {
   );
 };
 
-const Signup = () => {
+const Signup = ({ onSignup }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -104,6 +135,8 @@ const Signup = () => {
     confirmPassword: '',
     agreeToTerms: false
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
@@ -111,12 +144,38 @@ const Signup = () => {
       ...formData,
       [e.target.name]: value
     });
+    setError('');
   };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Signup data:', formData);
-    // Add your signup logic here
+    
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await authAPI.register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        role: 'STUDENT'
+      });
+
+      // Store token and user data
+      localStorage.setItem('token', response.accessToken);
+      localStorage.setItem('user', JSON.stringify(response));
+      
+      onSignup(response);
+    } catch (err) {
+      setError('Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -126,6 +185,8 @@ const Signup = () => {
           <h2>Create Account</h2>
           <p>Join thousands of learners worldwide</p>
         </div>
+
+        {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-row">
@@ -139,6 +200,7 @@ const Signup = () => {
                 onChange={handleChange}
                 placeholder="Enter your first name"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -152,9 +214,11 @@ const Signup = () => {
                 onChange={handleChange}
                 placeholder="Enter your last name"
                 required
+                disabled={loading}
               />
             </div>
           </div>
+          
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
@@ -165,10 +229,12 @@ const Signup = () => {
               onChange={handleChange}
               placeholder="Enter your email"
               required
+              disabled={loading}
             />
           </div>
 
-          <div className="form-group">
+        
+         <div className="form-group">
             <label htmlFor="password">Password</label>
             <div className="password-input">
               <input
@@ -179,6 +245,7 @@ const Signup = () => {
                 onChange={handleChange}
                 placeholder="Create a password"
                 required
+                disabled={loading}
               />
               <span 
                 className="password-toggle"
@@ -188,7 +255,6 @@ const Signup = () => {
               </span>
             </div>
           </div>
-
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirm Password</label>
             <input
@@ -199,9 +265,9 @@ const Signup = () => {
               onChange={handleChange}
               placeholder="Confirm your password"
               required
+              disabled={loading}
             />
           </div>
-
           <div className="form-group checkbox-group">
             <input
               type="checkbox"
@@ -210,26 +276,34 @@ const Signup = () => {
               checked={formData.agreeToTerms}
               onChange={handleChange}
               required
+              disabled={loading}
             />
             <label htmlFor="agreeToTerms">
               I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
             </label>
           </div>
 
-          <button type="submit" className="btn btn-primary btn-full">Create Account</button>
+          <button 
+            type="submit" 
+            className="btn btn-primary btn-full"
+            disabled={loading}
+          >
+            {loading ? 'Creating Account...' : 'Create Account'}
+          </button>
         </form>
 
         <div className="auth-divider">
           <span>Or sign up with</span>
         </div>
-       <div className="social-auth">
-          <button className="btn btn-google">
+        
+               <div className="social-auth">
+          <button className="btn btn-google" disabled={loading}>
             <FaGoogle /> Google
           </button>
-          <button className="btn btn-github">
+          <button className="btn btn-github" disabled={loading}>
             <FaGithub /> GitHub
           </button>
-          <button className="btn btn-linkedin">
+          <button className="btn btn-linkedin" disabled={loading}>
             <FaLinkedin /> LinkedIn
           </button>
         </div>
