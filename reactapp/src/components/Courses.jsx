@@ -34,6 +34,17 @@ const Courses = ({ courses, loading, error }) => {
   for (let i = 1; i <= Math.ceil(sortedCourses.length / coursesPerPage); i++) {
     pageNumbers.push(i);
   }
+
+  // Helper function for course icons
+  const getCourseIcon = (category) => {
+    switch(category) {
+      case 'Technology': return 'laptop-code';
+      case 'Business': return 'chart-line';
+      case 'Design': return 'pencil-ruler';
+      case 'Science': return 'flask';
+      default: return 'book';
+    }
+  };
   return (
     <div className="courses-page">
       <div className="container">
@@ -96,12 +107,13 @@ const Courses = ({ courses, loading, error }) => {
         
         {/* Loading indicator */}
         {loading && <div className="loading">Loading courses...</div>}
-        {/* Courses Grid */}
         <div className="courses-grid">
           {currentCourses.map(course => (
             <div key={course.id} className="course-card">
-              <div className="course-image">
-                <i className="fas fa-laptop-code"></i>
+              <div 
+                className={`course-image ${(course.category || 'technology').toLowerCase()}`}
+              >
+                <i className={`fas fa-${getCourseIcon(course.category)}`}></i>
                 <div className="course-category">{course.category || 'Technology'}</div>
               </div>
               <div className="course-content">
@@ -112,13 +124,6 @@ const Courses = ({ courses, loading, error }) => {
                   <span><i className="fas fa-users"></i> {course.enrolledCount || 0} students</span>
                   <span><i className="fas fa-star"></i> 4.8 (120 reviews)</span>
                 </div>
-                <div className="course-rating">
-                  <div className="rating-stars">
-                    {[...Array(5)].map((_, i) => (
-                      <i key={i} className="fas fa-star"></i>
-                    ))}
-                  </div>
-                </div>
                 <div className="course-price">$49.99</div>
                 <div className="course-actions">
                   <button className="btn btn-outline">Add to Cart</button>
@@ -128,8 +133,6 @@ const Courses = ({ courses, loading, error }) => {
             </div>
           ))}
         </div>
-
-        {/* Pagination */}
         {pageNumbers.length > 1 && (
           <div className="pagination">
             <button 
@@ -159,6 +162,7 @@ const Courses = ({ courses, loading, error }) => {
             </button>
           </div>
         )}
+
         {/* Results count */}
         <div className="results-count">
           Showing {indexOfFirstCourse + 1}-{Math.min(indexOfLastCourse, sortedCourses.length)} of {sortedCourses.length} courses
@@ -167,5 +171,4 @@ const Courses = ({ courses, loading, error }) => {
     </div>
   );
 };
-
 export default Courses;

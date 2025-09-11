@@ -1,10 +1,8 @@
-// components/Home.js
 import React from 'react';
 import { Link } from 'react-router-dom';
 import './Home.css';
 
 const Home = ({ courses, loading, error }) => {
-  // Get only 3 courses for the home page preview
   const featuredCourses = courses.slice(0, 3);
 
   return (
@@ -43,7 +41,7 @@ const Home = ({ courses, loading, error }) => {
                 <h3 className="course-title">{course.title}</h3>
                 <p className="course-description">{course.description}</p>
                 <div className="course-meta">
-                  <span><i className="fas fa-users"></i> {course.enrolledCount || 0} students</span>
+                  <span><i className="fas fa-users"></i> {course.enrolledCount || 50} students</span>
                   <span><i className="fas fa-star"></i> 4.8</span>
                 </div>
                 <div className="course-actions">

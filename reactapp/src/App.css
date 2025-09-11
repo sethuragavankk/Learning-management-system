@@ -447,4 +447,14 @@ footer {
     padding: 8px 16px;
     font-size: 0.9rem;
   }
+  /* App.css addition */
+.App {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+}
 }

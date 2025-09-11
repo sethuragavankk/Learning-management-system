@@ -1,50 +1,79 @@
-// import React from "react";
+import React from 'react';
+import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn, FaYoutube } from 'react-icons/fa';
+import './Footer.css';
 
-// export default function Footer() {
-//   const styles = {
-//     footer: {
-//       backgroundColor: "#0d6efd",
-//       color: "white",
-//       padding: "16px 0",
-//       marginTop: "40px",
-//     },
-//     container: {
-//       maxWidth: "1000px",
-//       margin: "0 auto",
-//       padding: "0 20px",
-//       display: "flex",
-//       justifyContent: "space-between",
-//       alignItems: "center",
-//       flexWrap: "wrap",
-//     },
-//     text: {
-//       margin: 0,
-//       fontSize: "0.9rem",
-//     },
-//     links: {
-//       display: "flex",
-//       gap: "16px",
-//     },
-//     link: {
-//       color: "white",
-//       textDecoration: "none",
-//       fontSize: "0.9rem",
-//       transition: "opacity 0.2s",
-//     },
-//   };
+const Footer = () => {
+  return (
+    <footer className="footer">
+      <div className="container">
+        <div className="footer-content">
+          <div className="footer-section">
+            <h3>LMS Lite</h3>
+            <p>Empowering learners to achieve their personal and professional goals through high-quality education.</p>
+            <div className="social-links">
+              <a href="#" aria-label="Facebook"><FaFacebookF /></a>
+              <a href="#" aria-label="Twitter"><FaTwitter /></a>
+              <a href="#" aria-label="Instagram"><FaInstagram /></a>
+              <a href="#" aria-label="LinkedIn"><FaLinkedinIn /></a>
+              <a href="#" aria-label="YouTube"><FaYoutube /></a>
+            </div>
+          </div>
+                   <div className="footer-section">
+            <h4>Quick Links</h4>
+            <ul className="footer-links">
+              <li><a href="/">Home</a></li>
+              <li><a href="/courses">Courses</a></li>
+              <li><a href="/mylearning">My Learning</a></li>
+              <li><a href="/about">About Us</a></li>
+            </ul>
+          </div>
+          
+          <div className="footer-section">
+            <h4>Categories</h4>
+            <ul className="footer-links">
+              <li><a href="#">Technology</a></li>
+              <li><a href="#">Business</a></li>
+              <li><a href="#">Design</a></li>
+              <li><a href="#">Science</a></li>
+              <li><a href="#">Health & Wellness</a></li>
+            </ul>
+          </div>
+          
+          <div className="footer-section">
+            <h4>Support</h4>
+            <ul className="footer-links">
+              <li><a href="#">Contact Us</a></li>
+              <li><a href="#">Help Center</a></li>
+              <li><a href="#">FAQ</a></li>
+              <li><a href="#">Terms of Service</a></li>
+              <li><a href="#">Privacy Policy</a></li>
+            </ul>
+          </div>
+          
+          <div className="footer-section">
+            <h4>Newsletter</h4>
+            <p>Subscribe to our newsletter for the latest updates and course offerings.</p>
+            <div className="newsletter-form">
+              <input type="email" placeholder="Enter your email" />
+              <button className="btn btn-primary">Subscribe</button>
+            </div>
+          </div>
+        </div>
+        
+        <div className="footer-bottom">
+          <div className="copyright">
+            <p>&copy; 2023 LMS Lite. All rights reserved.</p>
+          </div>
+          <div className="footer-bottom-links">
+            <a href="#">Privacy Policy</a>
+            <a href="#">Terms of Service</a>
+            <a href="#">Cookie Policy</a>
+            <a href="#">Sitemap</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};
 
-//   return (
-//     <footer style={styles.footer}>
-//       <div style={styles.container}>
-//         <p style={styles.text}>
-//           © {new Date().getFullYear()} Study Progress Tracker. All rights reserved.
-//         </p>
-//         <div style={styles.links}>
-//           <a href="/about" style={styles.link}>About</a>
-//           <a href="/contact" style={styles.link}>Contact</a>
-//           <a href="/privacy" style={styles.link}>Privacy Policy</a>
-//         </div>
-//       </div>
-//     </footer>
-//   );
-// }
+export default Footer;
