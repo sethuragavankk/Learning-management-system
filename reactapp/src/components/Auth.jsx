@@ -128,8 +128,7 @@ const Login = ({ onLogin }) => {
 const Signup = ({ onSignup }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '', 
     email: '',
     password: '',
     confirmPassword: '',
@@ -154,16 +153,20 @@ const Signup = ({ onSignup }) => {
       return;
     }
 
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
       const response = await authAPI.register({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        name: formData.name, 
         email: formData.email,
         password: formData.password,
-        role: 'STUDENT'
+        role: ["student"] 
       });
 
       // Store token and user data
@@ -173,6 +176,7 @@ const Signup = ({ onSignup }) => {
       onSignup(response);
     } catch (err) {
       setError('Registration failed. Please try again.');
+      console.error('Signup error:', err);
     } finally {
       setLoading(false);
     }
@@ -189,37 +193,20 @@ const Signup = ({ onSignup }) => {
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="firstName">First Name</label>
-              <input
-                type="text"
-                id="firstName"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                placeholder="Enter your first name"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="lastName">Last Name</label>
-              <input
-                type="text"
-                id="lastName"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                placeholder="Enter your last name"
-                required
-                disabled={loading}
-              />
-            </div>
-          </div>
-          
           <div className="form-group">
+            <label htmlFor="name">Full Name</label> {/* Changed from firstName */}
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Enter your full name"
+              required
+              disabled={loading}
+            />
+          </div>
+                      <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
               type="email"
@@ -233,8 +220,7 @@ const Signup = ({ onSignup }) => {
             />
           </div>
 
-        
-         <div className="form-group">
+          <div className="form-group">
             <label htmlFor="password">Password</label>
             <div className="password-input">
               <input
@@ -243,8 +229,9 @@ const Signup = ({ onSignup }) => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Create a password"
+                placeholder="Create a password (min. 6 characters)"
                 required
+                minLength="6"
                 disabled={loading}
               />
               <span 
@@ -255,6 +242,7 @@ const Signup = ({ onSignup }) => {
               </span>
             </div>
           </div>
+
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirm Password</label>
             <input
@@ -268,6 +256,7 @@ const Signup = ({ onSignup }) => {
               disabled={loading}
             />
           </div>
+
           <div className="form-group checkbox-group">
             <input
               type="checkbox"
@@ -286,17 +275,16 @@ const Signup = ({ onSignup }) => {
           <button 
             type="submit" 
             className="btn btn-primary btn-full"
-            disabled={loading}
+            disabled={loading || !formData.agreeToTerms}
           >
             {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
-
         <div className="auth-divider">
           <span>Or sign up with</span>
         </div>
         
-               <div className="social-auth">
+        <div className="social-auth">
           <button className="btn btn-google" disabled={loading}>
             <FaGoogle /> Google
           </button>

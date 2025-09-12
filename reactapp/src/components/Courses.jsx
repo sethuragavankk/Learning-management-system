@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getCoursesWithFallback } from '../services/api';
+import { getCoursesWithFallback, enrollInCourse } from '../services/api';
 import './Courses.css';
 
-const Courses = () => {
+const Courses = ({ user }) => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,33 +35,47 @@ const Courses = () => {
     }
   };
 
-  const handleEnroll = async (courseId) => {
-    try {
-      setEnrollingCourse(courseId);
-      // Simulate API call - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      alert('Successfully enrolled in the course!');
-      
-      // Update local state to reflect enrollment
-      setCourses(prevCourses => 
-        prevCourses.map(course => 
-          course.id === courseId 
-            ? { 
-                ...course, 
-                enrolled: true, 
-                enrolledCount: (course.enrolledCount || 0) + 1 
-              }
-            : course
-        )
-      );
-    } catch (err) {
-      alert('Failed to enroll in the course. Please try again.');
-      console.error('Enrollment error:', err);
-    } finally {
-      setEnrollingCourse(null);
+    const handleEnroll = async (courseId) => {
+  try {
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    
+    if (!token || !userStr) {
+      alert('Please log in to enroll in courses');
+      window.location.href = '/login';
+      return;
     }
-  };
+    
+    const user = JSON.parse(userStr);
+    setEnrollingCourse(courseId);
+    
+    // Call the enrollment API
+    const enrolledCourse = await enrollInCourse(courseId);
+    
+    alert('Successfully enrolled in the course!');
+    
+    // Update local state to reflect enrollment
+    setCourses(prevCourses => 
+      prevCourses.map(course => 
+        course.id === courseId 
+          ? { 
+              ...course, 
+              enrolled: true, 
+              enrolledStudents: [...(course.enrolledStudents || []), user.email],
+              enrolledCount: (course.enrolledCount || 0) + 1,
+              progress: 0 // Initialize progress
+            }
+          : course
+      )
+    );
+  } catch (err) {
+    alert(err.message || 'Failed to enroll in the course. Please try again.');
+    console.error('Enrollment error:', err);
+  } finally {
+    setEnrollingCourse(null);
+  }
+};
 
   // Filter courses by category - ensure it always returns an array
   const filteredCourses = React.useMemo(() => {

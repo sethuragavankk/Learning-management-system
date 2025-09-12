@@ -58,56 +58,53 @@ public class AuthController {
                 .map(item -> item.getAuthority())
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(new JwtResponse(jwt, 
-                                                 userDetails.getId(), 
-                                                 userDetails.getName(), 
-                                                 userDetails.getEmail(), 
-                                                 roles));
+        return ResponseEntity.ok(new JwtResponse(jwt,  userDetails.getId(),  userDetails.getName(),  userDetails.getEmail(), roles));
+    }
+    @PostMapping("/signup")
+public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
+    if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+        return ResponseEntity
+                .badRequest()
+                .body(new MessageResponse("Error: Email is already in use!"));
     }
 
-    @PostMapping("/signup")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
-        if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new MessageResponse("Error: Email is already in use!"));
-        }
+    // Create new user's account
+    User user = new User(signUpRequest.getName(), 
+                         signUpRequest.getEmail(),
+                         encoder.encode(signUpRequest.getPassword()));
 
-        // Create new user's account
-        User user = new User(signUpRequest.getName(), 
-                             signUpRequest.getEmail(),
-                             encoder.encode(signUpRequest.getPassword()));
+    Set<String> strRoles = signUpRequest.getRole();
+    Set<Role> roles = new HashSet<>();
 
-        Set<String> strRoles = signUpRequest.getRole();
-        Set<Role> roles = new HashSet<>();
-
-        if (strRoles == null) {
-            Role studentRole = roleRepository.findByName(ERole.ROLE_STUDENT)
-                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-            roles.add(studentRole);
-        } else {
-            strRoles.forEach(role -> {
-                switch (role) {
+    if (strRoles == null) {
+        Role studentRole = roleRepository.findByName(ERole.ROLE_STUDENT)
+                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+        roles.add(studentRole);
+    } else {
+        strRoles.forEach(role -> {
+            ERole roleEnum;
+            switch (role.toLowerCase()) {
                 case "admin":
-                    Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                            .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                    roles.add(adminRole);
+                    roleEnum = ERole.ROLE_ADMIN;
                     break;
                 case "instructor":
-                    Role modRole = roleRepository.findByName(ERole.ROLE_INSTRUCTOR)
-                            .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                    roles.add(modRole);
+                    roleEnum = ERole.ROLE_INSTRUCTOR;
                     break;
+                case "student":
                 default:
-                    Role studentRole = roleRepository.findByName(ERole.ROLE_STUDENT)
-                            .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-                    roles.add(studentRole);
-                }
-            });
-        }
-        user.setRoles(roles);
-        userRepository.save(user);
-
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+                    roleEnum = ERole.ROLE_STUDENT;
+                    break;
+            }
+            
+            Role dbRole = roleRepository.findByName(roleEnum)
+                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+            roles.add(dbRole);
+        });
     }
+    user.setRoles(roles);
+    userRepository.save(user);
+
+    return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+}
+   
 }

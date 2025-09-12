@@ -17,4 +17,7 @@ public interface CourseModuleRepository extends JpaRepository<CourseModule, Long
     
     @Query("SELECT DISTINCT c.courseType FROM CourseModule c WHERE c.courseType IS NOT NULL")
     List<String> findDistinctCourseTypes();
+    
+    // New method to find courses by enrolled student
+    List<CourseModule> findByEnrolledStudentsContaining(String studentEmail);
 }

@@ -8,6 +8,7 @@ import About from './components/About';
 import { Login, Signup } from './components/Auth';
 import { getCoursesWithFallback } from './services/api';
 import './App.css';
+import Footer from './components/Footer';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -87,6 +88,7 @@ function App() {
             path="/courses" 
             element={
               <Courses 
+              user={user}
                 courses={courses} 
                 loading={loading} 
                 error={error} 
@@ -108,6 +110,7 @@ function App() {
           />
         </Routes>
       </div>
+      <Footer/>
     </Router>
   );
 }

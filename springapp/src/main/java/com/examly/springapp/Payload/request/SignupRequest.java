@@ -13,11 +13,11 @@ public class SignupRequest {
     @Email
     private String email;
 
-    private Set<String> role;
-
     @NotBlank
     @Size(min = 6, max = 40)
     private String password;
+
+    private Set<String> role;
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
