@@ -11,6 +11,7 @@ import AddCourse from './components/AddCourse';
 import { getCoursesWithFallback } from './services/api';
 import './App.css';
 import Footer from './components/Footer';
+import QuizPage from './components/QuizePage';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -137,7 +138,9 @@ function App() {
             path="/addcourse" 
             element={<AddCourse/>}
           />
+          <Route path="/quiz/:courseId" element={<QuizPage/>}/>
         </Routes>
+        
         <Footer />
       </div>
     </Router>
