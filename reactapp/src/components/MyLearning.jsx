@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './MyLearning.css';
 
 const MyLearning = ({ user }) => {
@@ -9,6 +9,7 @@ const MyLearning = ({ user }) => {
   const [activeTab, setActiveTab] = useState('all');
   const [updatingProgress, setUpdatingProgress] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -22,6 +23,42 @@ const MyLearning = ({ user }) => {
     
     fetchEnrolledCourses();
   }, []);
+
+  // Handle quiz results when returning from quiz page
+  useEffect(() => {
+    if (location.state && location.state.quizCompleted) {
+      const { courseId, percentage } = location.state;
+      
+      if (percentage >= 70) {
+        // Update course progress based on quiz performance
+        setEnrolledCourses(prevCourses => {
+          const updatedCourses = prevCourses.map(course =>
+            course.id === courseId
+              ? { 
+                  ...course, 
+                  progress: Math.min(course.progress + 20, 100),
+                  lastAccessed: new Date().toISOString(),
+                  completedAt: course.progress + 20 >= 100 ? new Date().toISOString() : course.completedAt
+                }
+              : course
+          );
+          
+          // Update localStorage
+          localStorage.setItem('enrolledCourses', JSON.stringify(updatedCourses));
+          
+          return updatedCourses;
+        });
+        
+        // Show success message
+        alert(`Quiz completed successfully! Your progress has been updated.`);
+      } else {
+        alert(`Quiz completed with ${percentage}% score. Try again to earn progress points!`);
+      }
+      
+      // Clear the state to prevent processing again on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Sample data with both completed and in-progress courses
   const getSampleEnrolledCourses = () => {
@@ -140,8 +177,8 @@ const MyLearning = ({ user }) => {
       
       // Simulate progress update
       setTimeout(() => {
-        setEnrolledCourses(prevCourses =>
-          prevCourses.map(course =>
+        setEnrolledCourses(prevCourses => {
+          const updatedCourses = prevCourses.map(course =>
             course.id === courseId
               ? { 
                   ...course, 
@@ -150,26 +187,19 @@ const MyLearning = ({ user }) => {
                   completedAt: course.progress + 10 >= 100 ? new Date().toISOString() : course.completedAt
                 }
               : course
-          )
-        );
-        
-        // Update localStorage
-        const updatedCourses = enrolledCourses.map(course =>
-          course.id === courseId
-            ? { 
-                ...course, 
-                progress: Math.min(course.progress + 10, 100),
-                lastAccessed: new Date().toISOString(),
-                completedAt: course.progress + 10 >= 100 ? new Date().toISOString() : course.completedAt
-              }
-            : course
-        );
-        localStorage.setItem('enrolledCourses', JSON.stringify(updatedCourses));
+          );
+          
+          // Update localStorage
+          localStorage.setItem('enrolledCourses', JSON.stringify(updatedCourses));
+          
+          return updatedCourses;
+        });
         
         setUpdatingProgress(null);
         
         // Show success message
-        if (enrolledCourses.find(c => c.id === courseId).progress + 10 >= 100) {
+        const course = enrolledCourses.find(c => c.id === courseId);
+        if (course && course.progress + 10 >= 100) {
           alert('Congratulations! You completed the course!');
         }
       }, 1000);
