@@ -11,6 +11,9 @@ const MyLearning = ({ user }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Get student email from user data or localStorage
+  const studentEmail = user?.email || localStorage.getItem('userEmail') || '727823ulu214@skct.edu.in';
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
@@ -27,38 +30,110 @@ const MyLearning = ({ user }) => {
   // Handle quiz results when returning from quiz page
   useEffect(() => {
     if (location.state && location.state.quizCompleted) {
-      const { courseId, percentage } = location.state;
+      const { courseId, score, total, percentage } = location.state;
       
-      if (percentage >= 70) {
-        // Update course progress based on quiz performance
-        setEnrolledCourses(prevCourses => {
-          const updatedCourses = prevCourses.map(course =>
-            course.id === courseId
-              ? { 
-                  ...course, 
-                  progress: Math.min(course.progress + 20, 100),
-                  lastAccessed: new Date().toISOString(),
-                  completedAt: course.progress + 20 >= 100 ? new Date().toISOString() : course.completedAt
-                }
-              : course
-          );
-          
-          // Update localStorage
-          localStorage.setItem('enrolledCourses', JSON.stringify(updatedCourses));
-          
-          return updatedCourses;
-        });
-        
-        // Show success message
-        alert(`Quiz completed successfully! Your progress has been updated.`);
-      } else {
-        alert(`Quiz completed with ${percentage}% score. Try again to earn progress points!`);
-      }
+      // Update progress in backend
+      updateCourseProgress(courseId, percentage, score, total);
       
       // Clear the state to prevent processing again on refresh
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
+
+  // Function to update course progress in backend
+  const updateCourseProgress = async (courseId, percentage, score, total) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Update quiz score in backend
+      const scoreResponse = await fetch('http://localhost:8080/api/courses/quiz-score', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          courseId: courseId,
+          studentEmail: studentEmail,
+          quizScore: score,
+          totalQuestions: total
+        })
+      });
+      
+      if (!scoreResponse.ok) {
+        throw new Error('Failed to update quiz score');
+      }
+      
+      // Calculate new progress (quiz contributes 20% to overall progress)
+      const newProgress = Math.min(percentage >= 70 ? 20 : 0, 100);
+      
+      // Update course progress in backend
+      const progressResponse = await fetch('http://localhost:8080/api/courses/progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          courseId: courseId,
+          studentEmail: studentEmail,
+          progressPercentage: newProgress
+        })
+      });
+      
+      if (!progressResponse.ok) {
+        throw new Error('Failed to update course progress');
+      }
+      
+      // Refresh the courses to get updated data
+      fetchEnrolledCourses();
+      
+      // Show success message
+      if (percentage >= 70) {
+        alert(`Quiz completed successfully! Your progress has been updated.`);
+      } else {
+        alert(`Quiz completed with ${percentage}% score. Try again to earn progress points!`);
+      }
+    } catch (err) {
+      console.error('Error updating progress:', err);
+      alert('Failed to update progress. Please try again.');
+    }
+  };
+
+  // Fetch enrolled courses from backend
+  const fetchEnrolledCourses = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/courses/enrolled?studentEmail=${studentEmail}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const courses = await response.json();
+        setEnrolledCourses(courses);
+      } else if (response.status === 404) {
+        // If no enrolled courses found, use sample data
+        const sampleCourses = getSampleEnrolledCourses();
+        setEnrolledCourses(sampleCourses);
+        setError('No enrolled courses found. Displaying sample data.');
+      } else {
+        throw new Error('Failed to fetch enrolled courses');
+      }
+    } catch (err) {
+      console.error('Error fetching enrolled courses:', err);
+      // Fallback to sample data
+      const sampleCourses = getSampleEnrolledCourses();
+      setEnrolledCourses(sampleCourses);
+      setError('Failed to load your courses. Displaying sample data.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Sample data with both completed and in-progress courses
   const getSampleEnrolledCourses = () => {
@@ -89,124 +164,44 @@ const MyLearning = ({ user }) => {
         enrolled: true,
         image: '/api/placeholder/300/200',
         description: 'Master data analysis, visualization, and machine learning with Python.'
-      },
-      {
-        id: 3,
-        courseName: 'UX/UI Design Principles',
-        title: 'UX/UI Design Principles',
-        category: 'Design',
-        progress: 75,
-        lastAccessed: '2023-11-20T14:45:00Z',
-        duration: 25,
-        instructor: 'Mike Johnson',
-        enrolled: true,
-        image: '/api/placeholder/300/200',
-        description: 'Create beautiful and functional user interfaces with proven design principles.'
-      },
-      {
-        id: 4,
-        courseName: 'Mobile App Development',
-        title: 'Mobile App Development',
-        category: 'Technology',
-        progress: 20,
-        lastAccessed: '2023-11-22T10:15:00Z',
-        duration: 40,
-        instructor: 'Sarah Wilson',
-        enrolled: true,
-        image: '/api/placeholder/300/200',
-        description: 'Build cross-platform mobile applications using React Native.'
-      },
-      {
-        id: 5,
-        courseName: 'Business Management',
-        title: 'Business Management',
-        category: 'Business',
-        progress: 30,
-        lastAccessed: '2023-11-25T09:15:00Z',
-        duration: 35,
-        instructor: 'Robert Brown',
-        enrolled: true,
-        image: '/api/placeholder/300/200',
-        description: 'Learn essential business management skills and strategies.'
-      },
-      {
-        id: 6,
-        courseName: 'Digital Marketing Mastery',
-        title: 'Digital Marketing Mastery',
-        category: 'Business',
-        progress: 100,
-        completedAt: '2023-09-10T16:30:00Z',
-        lastAccessed: '2023-09-10T16:30:00Z',
-        duration: 28,
-        instructor: 'Lisa Thompson',
-        enrolled: true,
-        image: '/api/placeholder/300/200',
-        description: 'Learn to create effective digital marketing campaigns across platforms.'
       }
     ];
-  };
-
-  const fetchEnrolledCourses = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // First try to get from localStorage
-      const storedCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
-      
-      if (storedCourses.length > 0) {
-        setEnrolledCourses(storedCourses);
-      } else {
-        // Fallback to sample data if no courses in localStorage
-        const sampleCourses = getSampleEnrolledCourses();
-        setEnrolledCourses(sampleCourses);
-        localStorage.setItem('enrolledCourses', JSON.stringify(sampleCourses));
-      }
-    } catch (err) {
-      console.error('Error fetching enrolled courses:', err);
-      setEnrolledCourses(getSampleEnrolledCourses());
-      setError('Failed to load your courses. Displaying sample data.');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleContinueLearning = async (courseId) => {
     try {
       setUpdatingProgress(courseId);
       
-      // Simulate progress update
-      setTimeout(() => {
-        setEnrolledCourses(prevCourses => {
-          const updatedCourses = prevCourses.map(course =>
-            course.id === courseId
-              ? { 
-                  ...course, 
-                  progress: Math.min(course.progress + 10, 100),
-                  lastAccessed: new Date().toISOString(),
-                  completedAt: course.progress + 10 >= 100 ? new Date().toISOString() : course.completedAt
-                }
-              : course
-          );
-          
-          // Update localStorage
-          localStorage.setItem('enrolledCourses', JSON.stringify(updatedCourses));
-          
-          return updatedCourses;
-        });
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/courses/progress', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          courseId: courseId,
+          studentEmail: studentEmail,
+          progressPercentage: 10 // Increment by 10%
+        })
+      });
+      
+      if (response.ok) {
+        // Refresh the courses to get updated data
+        fetchEnrolledCourses();
         
-        setUpdatingProgress(null);
-        
-        // Show success message
+        // Check if course is now completed
         const course = enrolledCourses.find(c => c.id === courseId);
         if (course && course.progress + 10 >= 100) {
           alert('Congratulations! You completed the course!');
         }
-      }, 1000);
-      
+      } else {
+        throw new Error('Failed to update progress');
+      }
     } catch (err) {
       alert('Failed to update progress. Please try again.');
       console.error('Progress update error:', err);
+    } finally {
       setUpdatingProgress(null);
     }
   };
