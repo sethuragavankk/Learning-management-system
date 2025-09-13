@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { coursesAPI } from './api'; // Import your API functions
+import { coursesAPI } from './api'; 
 import './QuizePage.css';
 
 const QuizPage = () => {
