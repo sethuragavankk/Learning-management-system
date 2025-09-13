@@ -238,7 +238,6 @@ const MyLearning = ({ user }) => {
             : course
         )
       );
-      
       // Update localStorage
       const updatedCourses = enrolledCourses.map(course =>
         course.id === courseId
