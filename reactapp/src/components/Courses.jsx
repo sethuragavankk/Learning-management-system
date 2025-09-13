@@ -16,31 +16,38 @@ const Courses = ({ user }) => {
     fetchCourses();
   }, []);
 
-  const fetchCourses = async () => {
-    try {
-      setLoading(true);
-      const coursesData = await getCoursesWithFallback();
-      
-      // Ensure coursesData is always an array
-      const coursesArray = Array.isArray(coursesData) ? coursesData : [];
-      
-      setCourses(coursesArray);
-    } catch (err) {
-      setError('Failed to load courses. Please try again later.');
-      console.error('Error fetching courses:', err);
-      // Set empty array as fallback
-      setCourses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-    const handleEnroll = async (courseId) => {
+ // Courses.js - Fix the fetchCourses function
+const fetchCourses = async () => {
   try {
-    // Check if user is logged in
+    setLoading(true);
+    setError(null);
+
+    const coursesData = await getCoursesWithFallback();
+    
+    console.log('Fetched courses:', coursesData); // Debug log
+    
+    if (!coursesData || coursesData.length === 0) {
+      setError('No courses found.');
+      setCourses([]);
+      return;
+    }
+
+    setCourses(coursesData);
+
+  } catch (err) {
+    console.error('Error fetching courses:', err);
+    setError('Failed to load courses. Please try again later.');
+    setCourses([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+const handleEnroll = async (courseId) => {
+  try {
     const token = localStorage.getItem('token');
     const userStr = localStorage.getItem('user');
-    
     if (!token || !userStr) {
       alert('Please log in to enroll in courses');
       window.location.href = '/login';
@@ -50,21 +57,38 @@ const Courses = ({ user }) => {
     const user = JSON.parse(userStr);
     setEnrollingCourse(courseId);
     
-    // Call the enrollment API
-    const enrolledCourse = await enrollInCourse(courseId);
+    // Call the API to enroll
+    await enrollInCourse(courseId);
+    
+    // Update localStorage to track enrolled courses
+    const enrolledCourses = JSON.parse(localStorage.getItem('enrolledCourses') || '[]');
+    const courseToEnroll = courses.find(course => course.id === courseId);
+    
+    if (courseToEnroll && !enrolledCourses.some(c => c.id === courseId)) {
+      const enrolledCourse = {
+        ...courseToEnroll,
+        enrolled: true,
+        progress: 0,
+        enrolledDate: new Date().toISOString(),
+        lastAccessed: new Date().toISOString()
+      };
+      
+      enrolledCourses.push(enrolledCourse);
+      localStorage.setItem('enrolledCourses', JSON.stringify(enrolledCourses));
+    }
     
     alert('Successfully enrolled in the course!');
     
-    // Update local state to reflect enrollment
-    setCourses(prevCourses => 
-      prevCourses.map(course => 
-        course.id === courseId 
-          ? { 
-              ...course, 
-              enrolled: true, 
+    // Update the UI
+    setCourses(prevCourses =>
+      prevCourses.map(course =>
+        course.id === courseId
+          ? {
+              ...course,
+              enrolled: true,
               enrolledStudents: [...(course.enrolledStudents || []), user.email],
               enrolledCount: (course.enrolledCount || 0) + 1,
-              progress: 0 // Initialize progress
+              progress: 0
             }
           : course
       )
@@ -76,19 +100,19 @@ const Courses = ({ user }) => {
     setEnrollingCourse(null);
   }
 };
-
-  // Filter courses by category - ensure it always returns an array
+  // Filter by category
   const filteredCourses = React.useMemo(() => {
     if (!Array.isArray(courses)) return [];
-    
-    return selectedCategory === 'All' 
-      ? courses 
-      : courses.filter(course => course.category === selectedCategory);
+    return selectedCategory === 'All'
+      ? courses
+      : courses.filter(
+          course => course.type?.toLowerCase() === selectedCategory.toLowerCase()
+        );
   }, [courses, selectedCategory]);
-  // Sort courses - ensure it always returns an array
+
+  // Sort courses
   const sortedCourses = React.useMemo(() => {
     if (!Array.isArray(filteredCourses)) return [];
-    
     return [...filteredCourses].sort((a, b) => {
       if (sortBy === 'popularity') return (b.enrolledCount || 0) - (a.enrolledCount || 0);
       if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
@@ -97,46 +121,34 @@ const Courses = ({ user }) => {
     });
   }, [filteredCourses, sortBy]);
 
-  // Get current courses
+  // Pagination
   const currentCourses = React.useMemo(() => {
     if (!Array.isArray(sortedCourses)) return [];
-    
     const indexOfLastCourse = currentPage * coursesPerPage;
     const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
     return sortedCourses.slice(indexOfFirstCourse, indexOfLastCourse);
   }, [sortedCourses, currentPage, coursesPerPage]);
 
-  // Page numbers
   const pageNumbers = React.useMemo(() => {
     if (!Array.isArray(sortedCourses)) return [];
-    
-    const numbers = [];
     const totalPages = Math.ceil(sortedCourses.length / coursesPerPage);
-    for (let i = 1; i <= totalPages; i++) {
-      numbers.push(i);
-    }
-    return numbers;
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
   }, [sortedCourses, coursesPerPage]);
 
-  // Change page
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-  // Helper function for course icons
-  const getCourseIcon = (category) => {
-    switch(category) {
-      case 'Technology': return 'laptop-code';
-      case 'Business': return 'chart-line';
-      case 'Design': return 'pencil-ruler';
-      case 'Science': return 'flask';
+  const getCourseIcon = (type) => {
+    switch (type?.toLowerCase()) {
+      case 'technology': return 'laptop-code';
+      case 'business': return 'chart-line';
+      case 'design': return 'pencil-ruler';
+      case 'science': return 'flask';
       default: return 'book';
     }
   };
 
-  const formatPrice = (price) => {
-    return price !== undefined && price !== null 
-      ? `$${price.toFixed(2)}` 
-      : 'Free';
-  };
+  const formatPrice = (price) =>
+    price !== undefined && price !== null ? `₹${price}` : 'Free';
   return (
     <div className="courses-page">
       <div className="container">
@@ -145,39 +157,18 @@ const Courses = ({ user }) => {
           <p>Discover your perfect course from our catalog</p>
         </div>
 
-        {/* Filters and Sorting */}
+        {/* Filters */}
         <div className="filters-container">
           <div className="category-filters">
-            <button 
-              className={selectedCategory === 'All' ? 'active' : ''} 
-              onClick={() => setSelectedCategory('All')}
-            >
-              All
-            </button>
-            <button 
-              className={selectedCategory === 'Technology' ? 'active' : ''} 
-              onClick={() => setSelectedCategory('Technology')}
-            >
-              Technology
-            </button>
-            <button 
-              className={selectedCategory === 'Business' ? 'active' : ''} 
-              onClick={() => setSelectedCategory('Business')}
-            >
-              Business
-            </button>
-            <button 
-              className={selectedCategory === 'Design' ? 'active' : ''} 
-              onClick={() => setSelectedCategory('Design')}
-            >
-              Design
-            </button>
-            <button 
-              className={selectedCategory === 'Science' ? 'active' : ''} 
-              onClick={() => setSelectedCategory('Science')}
-            >
-              Science
-            </button>
+            {['All', 'Technology', 'Business', 'Design', 'Science'].map(cat => (
+              <button
+                key={cat}
+                className={selectedCategory === cat ? 'active' : ''}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
           <div className="sorting">
             <label>Sort by:</label>
@@ -189,53 +180,43 @@ const Courses = ({ user }) => {
           </div>
         </div>
 
-        {/* Error message display */}
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
-        
-        {/* Loading indicator */}
+        {error && <div className="error-message">{error}</div>}
         {loading && <div className="loading">Loading courses...</div>}
 
-        {/* Courses Grid */}
         {!loading && !error && (
           <>
             <div className="courses-grid">
               {currentCourses.map(course => (
                 <div key={course.id} className="course-card">
-                  <div 
-                    className={`course-image ${(course.category || 'technology').toLowerCase()}`}
-                  >
-                    <i className={`fas fa-${getCourseIcon(course.category)}`}></i>
-                    <div className="course-category">{course.category || 'Technology'}</div>
+                  {/* Badge top right */}
+                  <div className="course-type-badge">{course.type}</div>
+                  <div className={`course-image ${course.type?.toLowerCase() || 'technology'}`}>
+                    <i className={`fas fa-${getCourseIcon(course.type)}`}></i>
                     {course.enrolled && <div className="enrolled-badge">Enrolled</div>}
                   </div>
+
                   <div className="course-content">
-                    <h3 className="course-title">{course.courseName || course.title || 'Unnamed Course'}</h3>
-                    <p className="course-instructor">By {course.instructor || 'Expert Instructor'}</p>
-                    <p className="course-description">
-                      {course.description || 'Comprehensive course covering essential topics and skills.'}
-                    </p>
+                    <h3 className="course-title">{course.title || course.courseName}</h3>
+                    <p className="course-instructor">By {course.instructor}</p>
+                    <p className="course-description">{course.description}</p>
+
                     <div className="course-meta">
                       <span><i className="fas fa-users"></i> {course.enrolledCount || 0} students</span>
-                      <span><i className="fas fa-star"></i> {course.rating || '4.8'} ({course.reviewCount || 120} reviews)</span>
+                      <span><i className="fas fa-star"></i> {course.rating || '4.5'} ({course.reviewCount || 50} reviews)</span>
                     </div>
-                    <div className="course-price">
-                      {formatPrice(course.price)}
-                      {course.originalPrice && course.originalPrice > course.price && (
-                        <span className="original-price">${course.originalPrice.toFixed(2)}</span>
-                      )}
-                    </div>
+                    <div className="course-price">{formatPrice(course.price)}</div>
                     <div className="course-actions">
                       <button className="btn btn-outline">View Details</button>
-                      <button 
+                      <button
                         className="btn btn-primary"
                         onClick={() => handleEnroll(course.id)}
                         disabled={course.enrolled || enrollingCourse === course.id}
                       >
-                        {enrollingCourse === course.id ? 'Enrolling...' : course.enrolled ? 'Enrolled' : 'Enroll Now'}
+                        {enrollingCourse === course.id
+                          ? 'Enrolling...'
+                          : course.enrolled
+                          ? 'Enrolled'
+                          : 'Enroll Now'}
                       </button>
                     </div>
                   </div>
@@ -246,14 +227,13 @@ const Courses = ({ user }) => {
             {/* Pagination */}
             {pageNumbers.length > 1 && (
               <div className="pagination">
-                <button 
-                  onClick={() => paginate(currentPage - 1)} 
+                <button
+                  onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
                   className="pagination-btn"
                 >
                   Previous
                 </button>
-                
                 {pageNumbers.map(number => (
                   <button
                     key={number}
@@ -263,9 +243,8 @@ const Courses = ({ user }) => {
                     {number}
                   </button>
                 ))}
-                
-                <button 
-                  onClick={() => paginate(currentPage + 1)} 
+                <button
+                  onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === pageNumbers.length}
                   className="pagination-btn"
                 >
@@ -274,14 +253,13 @@ const Courses = ({ user }) => {
               </div>
             )}
 
-            {/* Results count */}
             <div className="results-count">
               Showing {Math.min((currentPage - 1) * coursesPerPage + 1, sortedCourses.length)}-
               {Math.min(currentPage * coursesPerPage, sortedCourses.length)} of {sortedCourses.length} courses
             </div>
           </>
         )}
-        {/* Empty state */}
+
         {!loading && !error && sortedCourses.length === 0 && (
           <div className="empty-state">
             <i className="fas fa-search"></i>

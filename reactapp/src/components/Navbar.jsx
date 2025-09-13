@@ -1,5 +1,4 @@
-// components/Navbar.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './Navbar.css';
 
@@ -7,6 +6,66 @@ const Navbar = ({ user, onLogout }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Function to check if user is instructor based on backend roles
+  const isInstructor = () => {
+    if (!user) return false;
+    
+    // Check role based on backend structure
+    // Could be user.role, user.user.role, or user.roles array
+    let userRole = '';
+    
+    if (user.role) {
+      // If role is directly on user object
+      userRole = user.role;
+    } else if (user.user && user.user.role) {
+      // If role is nested in user object
+      userRole = user.user.role;
+    } else if (user.roles && user.roles.length > 0) {
+      // If roles is an array (common in JWT responses)
+      userRole = user.roles[0];
+    }
+    
+    console.log('User role detected:', userRole);
+    
+    // Check for both possible role formats
+    return userRole === 'ROLE_INSTRUCTOR' || userRole === 'INSTRUCTOR';
+  };
+
+  // Function to check if user is student
+  const isStudent = () => {
+    if (!user) return false;
+    
+    let userRole = '';
+    
+    if (user.role) {
+      userRole = user.role;
+    } else if (user.user && user.user.role) {
+      userRole = user.user.role;
+    } else if (user.roles && user.roles.length > 0) {
+      userRole = user.roles[0];
+    }
+    
+    console.log('User role detected:', userRole);
+    
+    return userRole === 'ROLE_STUDENT' || userRole === 'STUDENT';
+  };
+
+  // Detailed debugging
+  useEffect(() => {
+    console.log('=== NAVBAR DEBUG INFO ===');
+    console.log('User object:', user);
+    if (user) {
+      console.log('User role property:', user.role);
+      console.log('User.user role property:', user.user?.role);
+      console.log('User.roles array:', user.roles);
+      console.log('Is instructor:', isInstructor());
+      console.log('Is student:', isStudent());
+    } else {
+      console.log('No user logged in');
+    }
+    console.log('=======================');
+  }, [user]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -19,7 +78,6 @@ const Navbar = ({ user, onLogout }) => {
     onLogout();
     navigate('/');
   };
-
   return (
     <header>
       <div className="container">
@@ -32,7 +90,15 @@ const Navbar = ({ user, onLogout }) => {
             <li><Link to="/" className={location.pathname === '/' ? 'active' : ''}>Home</Link></li>
             <li><Link to="/courses" className={location.pathname === '/courses' ? 'active' : ''}>Courses</Link></li>
             {user && (
-              <li><Link to="/mylearning" className={location.pathname === '/mylearning' ? 'active' : ''}>My Learning</Link></li>
+              <>
+                {isInstructor() ? (
+                  <>
+                    <li><Link to="/addcourse" className={location.pathname === '/addcourse' ? 'active' : ''}>Add Course</Link></li>
+                  </>
+                ) : isStudent() ? (
+                  <li><Link to="/mylearning" className={location.pathname === '/mylearning' ? 'active' : ''}>My Learning</Link></li>
+                ) : null}
+              </>
             )}
             <li><Link to="/about" className={location.pathname === '/about' ? 'active' : ''}>About Us</Link></li>
           </ul>
@@ -50,7 +116,9 @@ const Navbar = ({ user, onLogout }) => {
             
             {user ? (
               <div className="user-menu">
-                <span className="welcome-text">Welcome, {user.name}</span>
+                <span className="welcome-text">Welcome, {user.name || user.user?.name}</span>
+                {isInstructor() && <span className="badge instructor-badge">Instructor</span>}
+                {isStudent() && <span className="badge student-badge">Student</span>}
                 <button className="btn btn-outline" onClick={handleLogout}>Log Out</button>
               </div>
             ) : (

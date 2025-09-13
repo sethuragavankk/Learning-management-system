@@ -1,4 +1,3 @@
-// components/About.js
 import React from 'react';
 import './About.css';
 
@@ -29,6 +28,7 @@ const About = () => {
             <i className="fas fa-graduation-cap"></i>
           </div>
         </div>
+
         {/* Values Section */}
         <div className="values-section">
           <h2>Our Values</h2>
@@ -61,39 +61,54 @@ const About = () => {
           <div className="team-grid">
             <div className="team-member">
               <div className="member-image">
-                <i className="fas fa-user"></i>
+                <img 
+                  src="https://ui-avatars.com/api/?name=Sethu+Ragavan&background=007bff&color=ffffff&size=128" 
+                  alt="Anjali Sharma" 
+                  className="avatar"
+                />
               </div>
-              <h3>Sarah Johnson</h3>
+              <h3>Sethu Ragavan</h3>
               <p className="member-role">CEO & Founder</p>
               <p>Education technology expert with 10+ years of experience</p>
             </div>
             <div className="team-member">
               <div className="member-image">
-                <i className="fas fa-user"></i>
+                <img 
+                  src="https://ui-avatars.com/api/?name=Rohit+Sharma&background=ff6600&color=ffffff&size=128" 
+                  alt="Rohit Verma" 
+                  className="avatar"
+                />
               </div>
-              <h3>Michael Chen</h3>
+              <h3>Rohit sharma</h3>
               <p className="member-role">CTO</p>
               <p>Software engineer passionate about building scalable learning platforms</p>
             </div>
             <div className="team-member">
               <div className="member-image">
-                <i className="fas fa-user"></i>
+                <img 
+                  src="https://ui-avatars.com/api/?name=Priya+Rajesh&background=ffcc00&color=000000&size=128" 
+                  alt="Priya Iyer" 
+                  className="avatar"
+                />
               </div>
-              <h3>Emily Rodriguez</h3>
+              <h3>Priya Rajesh</h3>
               <p className="member-role">Head of Content</p>
               <p>Curriculum developer with background in instructional design</p>
             </div>
             <div className="team-member">
               <div className="member-image">
-                <i className="fas fa-user"></i>
+                <img 
+                  src="https://ui-avatars.com/api/?name=John+Wick&background=33cc99&color=ffffff&size=128" 
+                  alt="Vikram Singh" 
+                  className="avatar"
+                />
               </div>
-              <h3>David Kim</h3>
+              <h3>John Wick</h3>
               <p className="member-role">Lead Instructor</p>
               <p>Industry expert with passion for teaching and mentorship</p>
             </div>
           </div>
         </div>
-
         {/* Stats Section */}
         <div className="about-stats">
           <h2>By The Numbers</h2>
@@ -116,6 +131,7 @@ const About = () => {
             </div>
           </div>
         </div>
+
         {/* CTA Section */}
         <div className="about-cta">
           <h2>Ready to start your learning journey?</h2>

@@ -34,7 +34,7 @@ const Login = ({ onLogin }) => {
       // Store token and user data
       localStorage.setItem('token', response.accessToken);
       localStorage.setItem('user', JSON.stringify(response));
-      
+
       onLogin(response);
     } catch (err) {
       setError('Invalid email or password. Please try again.');
@@ -71,7 +71,7 @@ const Login = ({ onLogin }) => {
             <label htmlFor="password">Password</label>
             <div className="password-input">
               <input
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
                 value={formData.password}
@@ -80,7 +80,7 @@ const Login = ({ onLogin }) => {
                 required
                 disabled={loading}
               />
-              <span 
+              <span
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
               >
@@ -91,9 +91,9 @@ const Login = ({ onLogin }) => {
               <a href="#">Forgot password?</a>
             </div>
           </div>
-          
-          <button 
-            type="submit" 
+
+          <button
+            type="submit"
             className="btn btn-primary btn-full"
             disabled={loading}
           >
@@ -118,36 +118,40 @@ const Login = ({ onLogin }) => {
         </div>
 
         <div className="auth-footer">
-          <p>Don't have an account? <a href="/signup">Sign up</a></p>
+          <p>
+            Don't have an account? <a href="/signup">Sign up</a>
+          </p>
         </div>
       </div>
     </div>
   );
 };
-
 const Signup = ({ onSignup }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    name: '', 
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    agreeToTerms: false
+    agreeToTerms: false,
+    role: 'student' // default role
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    const value =
+      e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({
       ...formData,
       [e.target.name]: value
     });
     setError('');
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -163,16 +167,16 @@ const Signup = ({ onSignup }) => {
 
     try {
       const response = await authAPI.register({
-        name: formData.name, 
+        name: formData.name,
         email: formData.email,
         password: formData.password,
-        role: ["student"] 
+        role: [formData.role] // send selected role as array
       });
 
       // Store token and user data
       localStorage.setItem('token', response.accessToken);
       localStorage.setItem('user', JSON.stringify(response));
-      
+
       onSignup(response);
     } catch (err) {
       setError('Registration failed. Please try again.');
@@ -193,8 +197,9 @@ const Signup = ({ onSignup }) => {
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
+          {/* Full Name */}
           <div className="form-group">
-            <label htmlFor="name">Full Name</label> {/* Changed from firstName */}
+            <label htmlFor="name">Full Name</label>
             <input
               type="text"
               id="name"
@@ -206,7 +211,8 @@ const Signup = ({ onSignup }) => {
               disabled={loading}
             />
           </div>
-                      <div className="form-group">
+          {/* Email */}
+          <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
               type="email"
@@ -220,21 +226,21 @@ const Signup = ({ onSignup }) => {
             />
           </div>
 
+          {/* Password */}
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <div className="password-input">
               <input
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Create a password (min. 6 characters)"
+                placeholder="Enter your password"
                 required
-                minLength="6"
                 disabled={loading}
               />
-              <span 
+              <span
                 className="password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
               >
@@ -243,6 +249,7 @@ const Signup = ({ onSignup }) => {
             </div>
           </div>
 
+          {/* Confirm Password */}
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirm Password</label>
             <input
@@ -257,33 +264,34 @@ const Signup = ({ onSignup }) => {
             />
           </div>
 
-          <div className="form-group checkbox-group">
-            <input
-              type="checkbox"
-              id="agreeToTerms"
-              name="agreeToTerms"
-              checked={formData.agreeToTerms}
+          {/* Role Selection */}
+          <div className="form-group">
+            <label htmlFor="role">Role</label>
+            <select
+              id="role"
+              name="role"
+              value={formData.role}
               onChange={handleChange}
-              required
               disabled={loading}
-            />
-            <label htmlFor="agreeToTerms">
-              I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
-            </label>
+              required
+            >
+              <option value="student">Student</option>
+              <option value="instructor">Instructor</option>
+            </select>
           </div>
-
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn btn-primary btn-full"
-            disabled={loading || !formData.agreeToTerms}
+            disabled={loading}
           >
-            {loading ? 'Creating Account...' : 'Create Account'}
+            {loading ? 'Signing Up...' : 'Sign Up'}
           </button>
         </form>
+
         <div className="auth-divider">
           <span>Or sign up with</span>
         </div>
-        
+
         <div className="social-auth">
           <button className="btn btn-google" disabled={loading}>
             <FaGoogle /> Google
@@ -297,11 +305,14 @@ const Signup = ({ onSignup }) => {
         </div>
 
         <div className="auth-footer">
-          <p>Already have an account? <a href="/login">Sign in</a></p>
+          <p>
+            Already have an account? <a href="/login">Sign in</a>
+          </p>
         </div>
       </div>
     </div>
   );
 };
+
 
 export { Login, Signup };

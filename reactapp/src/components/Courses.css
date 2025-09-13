@@ -73,15 +73,31 @@
   background: white;
   font-size: 0.9rem;
 }
-
-/* Course Card */
 .course-card {
+  position: relative; /* Make absolute children position correctly */
   background: white;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
   transition: transform 0.2s;
 }
+
+.course-type-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ffffff; /* You can change color as needed */
+  color: rgb(2, 2, 2);
+  padding: 6px 16px;  /* Horizontal padding makes it oval */
+  border-radius: 50px; /* Fully rounded */
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 10; /* Make sure it appears on top */
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
 
 .course-card:hover {
   transform: translateY(-5px);
@@ -260,3 +276,4 @@
     flex-wrap: wrap;
   }
 }
+
