@@ -24,7 +24,6 @@ const apiRequest = async (endpoint, options = {}) => {
     if (!response.ok) {
       throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
-
     const contentLength = response.headers.get('content-length');
     if (contentLength === '0' || response.status === 204) return null;
 
