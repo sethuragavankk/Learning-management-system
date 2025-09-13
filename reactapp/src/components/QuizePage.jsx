@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import './QuizPage.css';
+import { coursesAPI } from './api'; // Import your API functions
+import './QuizePage.css';
 
 const QuizPage = () => {
   const { courseId } = useParams();
@@ -9,8 +10,9 @@ const QuizPage = () => {
   const [answers, setAnswers] = useState({});
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [score, setScore] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sample quiz data - in a real app, this would come from an API
+  // Sample quiz data
   const sampleQuizzes = {
     1: {
       courseId: 1,
@@ -54,7 +56,7 @@ const QuizPage = () => {
     // Add quizzes for other courses as needed
   };
 
-  const quiz = sampleQuizzes[courseId] || sampleQuizzes[1]; // Fallback to first quiz if not found
+  const quiz = sampleQuizzes[courseId] || sampleQuizzes[1];
 
   const handleAnswerSelect = (questionId, answerIndex) => {
     setAnswers(prev => ({...prev, [questionId]: answerIndex}));
@@ -84,20 +86,56 @@ const QuizPage = () => {
     });
     setScore(calculatedScore);
   };
-  const handleSubmit = () => {
-    // Calculate percentage
-    const percentage = (score / quiz.questions.length) * 100;
-    
-    // Navigate back to MyLearning with quiz results
-    navigate('/mylearning', { 
-      state: { 
-        quizCompleted: true, 
-        courseId: parseInt(courseId), 
-        score: score, 
-        total: quiz.questions.length,
-        percentage: percentage
-      } 
-    });
+
+  const updateProgressInBackend = async (courseId, newProgress) => {
+    try {
+      // Get current progress from backend
+      const currentProgressData = await coursesAPI.getProgress(courseId);
+      const currentProgress = currentProgressData?.progress || 0;
+      
+      // Only update if the new progress is higher than current progress
+      if (newProgress > currentProgress) {
+        await coursesAPI.updateProgress(courseId, newProgress);
+        console.log(`Progress updated to ${newProgress}% for course ${courseId}`);
+      }
+    } catch (error) {
+      console.error('Failed to update progress in backend:', error);
+      // You might want to handle this error more gracefully
+    }
+  };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const percentage = (score / quiz.questions.length) * 100;
+      
+      // Only update progress if quiz was passed (70% or higher)
+      if (percentage >= 70) {
+        // Calculate new progress (current progress + 20%, max 100%)
+        const currentProgressResponse = await coursesAPI.getProgress(parseInt(courseId));
+        const currentProgress = currentProgressResponse?.progress || 0;
+        const newProgress = Math.min(currentProgress + 20, 100);
+        
+        // Update progress in backend
+        await updateProgressInBackend(parseInt(courseId), newProgress);
+      }
+      
+      // Navigate back to My Learning page with quiz results
+      navigate('/mylearning', { 
+        state: { 
+          quizCompleted: true, 
+          courseId: parseInt(courseId), 
+          score: score, 
+          total: quiz.questions.length,
+          percentage: percentage
+        } 
+      });
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      alert('Failed to submit quiz. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (quizCompleted) {
@@ -110,8 +148,12 @@ const QuizPage = () => {
               <h3>Your Score: {score}/{quiz.questions.length}</h3>
               <p>{Math.round((score / quiz.questions.length) * 100)}%</p>
             </div>
-            <button className="btn btn-primary" onClick={handleSubmit}>
-              Return to My Learning
+            <button 
+              className="btn btn-primary" 
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Submitting...' : 'Return to My Learning'}
             </button>
           </div>
         </div>
@@ -146,8 +188,6 @@ const QuizPage = () => {
             ))}
           </div>
         </div>
-
-         
 
         <div className="quiz-navigation">
           <button 
