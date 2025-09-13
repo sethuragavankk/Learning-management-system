@@ -8,8 +8,6 @@ const MyLearning = ({ user }) => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
   const [updatingProgress, setUpdatingProgress] = useState(null);
-  const [quizzes, setQuizzes] = useState({});
-  const [activeQuiz, setActiveQuiz] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -68,7 +66,7 @@ const MyLearning = ({ user }) => {
         image: '/api/placeholder/300/200',
         description: 'Create beautiful and functional user interfaces with proven design principles.'
       },
-           {
+      {
         id: 4,
         courseName: 'Mobile App Development',
         title: 'Mobile App Development',
@@ -125,6 +123,7 @@ const MyLearning = ({ user }) => {
         // Fallback to sample data if no courses in localStorage
         const sampleCourses = getSampleEnrolledCourses();
         setEnrolledCourses(sampleCourses);
+        localStorage.setItem('enrolledCourses', JSON.stringify(sampleCourses));
       }
     } catch (err) {
       console.error('Error fetching enrolled courses:', err);
@@ -134,6 +133,7 @@ const MyLearning = ({ user }) => {
       setLoading(false);
     }
   };
+
   const handleContinueLearning = async (courseId) => {
     try {
       setUpdatingProgress(courseId);
@@ -152,6 +152,20 @@ const MyLearning = ({ user }) => {
               : course
           )
         );
+        
+        // Update localStorage
+        const updatedCourses = enrolledCourses.map(course =>
+          course.id === courseId
+            ? { 
+                ...course, 
+                progress: Math.min(course.progress + 10, 100),
+                lastAccessed: new Date().toISOString(),
+                completedAt: course.progress + 10 >= 100 ? new Date().toISOString() : course.completedAt
+              }
+            : course
+        );
+        localStorage.setItem('enrolledCourses', JSON.stringify(updatedCourses));
+        
         setUpdatingProgress(null);
         
         // Show success message
@@ -168,133 +182,7 @@ const MyLearning = ({ user }) => {
   };
 
   const handleTakeQuiz = (courseId) => {
-    // Sample quiz data
-    const sampleQuiz = {
-      courseId: courseId,
-      questions: [
-        {
-          id: 1,
-          question: "What is the main purpose of HTML?",
-          options: [
-            "Styling web pages",
-            "Defining structure of web content",
-            "Adding interactivity to websites",
-            "Database management"
-          ],
-          correctAnswer: 1
-        },
-        {
-          id: 2,
-          question: "Which CSS property is used to change text color?",
-          options: [
-            "font-color",
-            "text-color",
-            "color",
-            "text-style"
-          ],
-          correctAnswer: 2
-        },
-        {
-          id: 3,
-          question: "JavaScript is primarily used for:",
-          options: [
-            "Styling web pages",
-            "Server-side programming only",
-            "Adding interactivity to web pages",
-            "Database management"
-          ],
-          correctAnswer: 2
-        }
-      ]
-    };
-         setQuizzes(prev => ({...prev, [courseId]: sampleQuiz}));
-    setActiveQuiz(courseId);
-  };
-
-  const handleQuizSubmit = (courseId, answers) => {
-    const quiz = quizzes[courseId];
-    let score = 0;
-    
-    quiz.questions.forEach((question, index) => {
-      if (answers[index] === question.correctAnswer) {
-        score++;
-      }
-    });
-    
-    const percentage = (score / quiz.questions.length) * 100;
-    alert(`Quiz completed! Your score: ${score}/${quiz.questions.length} (${percentage}%)`);
-    
-    // Update course progress based on quiz performance
-    if (percentage >= 70) {
-      setEnrolledCourses(prevCourses =>
-        prevCourses.map(course =>
-          course.id === courseId
-            ? { 
-                ...course, 
-                progress: Math.min(course.progress + 20, 100),
-                lastAccessed: new Date().toISOString(),
-                completedAt: course.progress + 20 >= 100 ? new Date().toISOString() : course.completedAt
-              }
-            : course
-        )
-      );
-      // Update localStorage
-      const updatedCourses = enrolledCourses.map(course =>
-        course.id === courseId
-          ? { 
-              ...course, 
-              progress: Math.min(course.progress + 20, 100),
-              lastAccessed: new Date().toISOString(),
-              completedAt: course.progress + 20 >= 100 ? new Date().toISOString() : course.completedAt
-            }
-          : course
-      );
-      localStorage.setItem('enrolledCourses', JSON.stringify(updatedCourses));
-    }
-    
-    setActiveQuiz(null);
-  };
-
-  const Quiz = ({ quiz, onSubmit, onCancel }) => {
-    const [answers, setAnswers] = useState({});
-    
-    const handleAnswerSelect = (questionId, answerIndex) => {
-      setAnswers(prev => ({...prev, [questionId]: answerIndex}));
-    };
-    
-    const handleSubmit = () => {
-      onSubmit(Object.values(answers));
-    };
-       return (
-      <div className="quiz-modal">
-        <div className="quiz-content">
-          <h2>Course Quiz</h2>
-          {quiz.questions.map((question, index) => (
-            <div key={question.id} className="quiz-question">
-              <h3>Question {index + 1}: {question.question}</h3>
-              <div className="quiz-options">
-                {question.options.map((option, optIndex) => (
-                  <label key={optIndex} className="quiz-option">
-                    <input
-                      type="radio"
-                      name={`question-${question.id}`}
-                      value={optIndex}
-                      onChange={() => handleAnswerSelect(question.id, optIndex)}
-                      checked={answers[question.id] === optIndex}
-                    />
-                    {option}
-                  </label>
-                ))}
-              </div>
-            </div>
-          ))}
-          <div className="quiz-actions">
-            <button className="btn btn-outline" onClick={onCancel}>Cancel</button>
-            <button className="btn btn-primary" onClick={handleSubmit}>Submit Quiz</button>
-          </div>
-        </div>
-      </div>
-    );
+    navigate(`/quiz/${courseId}`);
   };
 
   const handleViewCertificate = (courseId) => {
@@ -325,6 +213,7 @@ const MyLearning = ({ user }) => {
     totalHours: enrolledCourses.reduce((total, course) => total + (course.duration || 0), 0),
     certificates: enrolledCourses.filter(c => (c.progress || 0) === 100).length
   };
+
   const formatLastAccessed = (dateString) => {
     if (!dateString) return 'Never';
     
@@ -371,6 +260,7 @@ const MyLearning = ({ user }) => {
             {error}
           </div>
         )}
+        
         {/* Learning Statistics */}
         {!loading && enrolledCourses.length > 0 && (
           <div className="learning-stats">
@@ -429,6 +319,7 @@ const MyLearning = ({ user }) => {
             Loading your courses...
           </div>
         )}
+        
         {/* Courses List */}
         {!loading && (
           <div className="learning-courses">
@@ -475,7 +366,8 @@ const MyLearning = ({ user }) => {
                       </div>
                       <span className="progress-text">{course.progress || 0}% complete</span>
                     </div>
-                                              <div className="course-meta">
+                    
+                    <div className="course-meta">
                       <span><i className="fas fa-clock"></i> {course.duration || 0} hours</span>
                       <span><i className="fas fa-user"></i> {course.instructor || 'Unknown Instructor'}</span>
                     </div>
@@ -530,7 +422,8 @@ const MyLearning = ({ user }) => {
                       <i className="fas fa-question-circle"></i>
                       Take Quiz
                     </button>
-                                      <button 
+                    
+                    <button 
                       className="btn btn-outline"
                       onClick={() => handleViewDetails(course.id)}
                     >
@@ -560,15 +453,6 @@ const MyLearning = ({ user }) => {
               </div>
             )}
           </div>
-        )}
-
-        {/* Quiz Modal */}
-        {activeQuiz && quizzes[activeQuiz] && (
-          <Quiz 
-            quiz={quizzes[activeQuiz]} 
-            onSubmit={(answers) => handleQuizSubmit(activeQuiz, answers)}
-            onCancel={() => setActiveQuiz(null)}
-          />
         )}
       </div>
     </div>
