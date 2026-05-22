@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://8080-acfdaebeabbdafadabdcfaceddbbabeaeefcea.premiumproject.examly.io/api';
+const API_BASE_URL = 'http://localhost:8080/api';
 
 // ------------------- Generic API Request -------------------
 const apiRequest = async (endpoint, options = {}) => {
@@ -95,7 +95,7 @@ export const coursesAPI = {
   },
 
   create: (courseData) =>
-    apiRequest('/admin/addCourse', {
+    apiRequest('/courses', {
       method: 'POST',
       body: JSON.stringify(courseData),
     }),

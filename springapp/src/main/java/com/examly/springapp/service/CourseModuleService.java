@@ -137,7 +137,7 @@ public class CourseModuleService {
     
     // New method to get enrolled courses for a student
     public List<CourseModule> getEnrolledCourses(String studentEmail) {
-        return repo.findByEnrolledStudentsContaining(studentEmail);
+        return repo.findEnrolledCourses(studentEmail);
     }
     
     // New method to check enrollment status

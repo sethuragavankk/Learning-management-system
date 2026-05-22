@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 @Repository
@@ -19,5 +20,11 @@ public interface CourseModuleRepository extends JpaRepository<CourseModule, Long
     List<String> findDistinctCourseTypes();
     
     // New method to find courses by enrolled student
-    List<CourseModule> findByEnrolledStudentsContaining(String studentEmail);
+    @Query(
+    "SELECT c FROM CourseModule c JOIN c.enrolledStudents s WHERE s = :studentEmail"
+    )
+    List<CourseModule> findEnrolledCourses(
+    @Param("studentEmail")
+    String studentEmail
+    );
 }

@@ -102,71 +102,161 @@ const MyLearning = ({ user }) => {
 
   // Fetch enrolled courses from backend
   const fetchEnrolledCourses = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/courses/enrolled?studentEmail=${studentEmail}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (response.ok) {
-        const courses = await response.json();
-        setEnrolledCourses(courses);
-      } else if (response.status === 404) {
-        // If no enrolled courses found, use sample data
-        const sampleCourses = getSampleEnrolledCourses();
-        setEnrolledCourses(sampleCourses);
-        setError('No enrolled courses found. Displaying sample data.');
-      } else {
-        throw new Error('Failed to fetch enrolled courses');
-      }
-    } catch (err) {
-      console.error('Error fetching enrolled courses:', err);
-      // Fallback to sample data
-      const sampleCourses = getSampleEnrolledCourses();
-      setEnrolledCourses(sampleCourses);
-      setError('Failed to load your courses. Displaying sample data.');
-    } finally {
-      setLoading(false);
-    }
-  };
+
+  try {
+
+    setLoading(true);
+    setError(null);
+
+    const token =
+      localStorage.getItem("token");
+
+    const user =
+      JSON.parse(
+        localStorage.getItem("user")
+      );
+
+    const email =
+      user?.email ||
+      studentEmail;
+
+    console.log(
+      "Email:",
+      email
+    );
+
+    const response =
+      await fetch(
+
+`http://localhost:8080/api/courses/enrolled?studentEmail=${encodeURIComponent(email)}`,
+
+{
+headers:{
+
+"Authorization":
+`Bearer ${token}`,
+
+"Content-Type":
+"application/json"
+
+}
+
+}
+
+);
+
+console.log(
+"Status:",
+response.status
+);
+
+if(!response.ok){
+
+const errorText=
+await response.text();
+
+console.log(
+"Backend Error:",
+errorText
+);
+
+throw new Error(
+`HTTP ${response.status}`
+);
+
+}
+
+const data=
+await response.json();
+
+console.log(
+"Enrolled:",
+data
+);
+
+const courses =
+Array.isArray(data)
+? data
+: data.courses || [];
+
+const mappedCourses =
+courses.map(course=>({
+
+...course,
+
+progress:
+
+typeof course.progress === "object"
+
+? course.progress[email] ||
+
+Object.values(
+course.progress
+|| {}
+)[0] ||
+
+0
+
+: course.progress || 0
+
+}));
+
+setEnrolledCourses(
+mappedCourses
+);
+
+}
+catch(err){
+
+console.log(err);
+
+setError(
+"Failed to load courses"
+);
+
+setEnrolledCourses([]);
+
+}
+finally{
+
+setLoading(false);
+
+}
+
+};
 
   // Sample data with both completed and in-progress courses
-  const getSampleEnrolledCourses = () => {
-    return [
-      {
-        id: 1,
-        courseName: 'Web Development Fundamentals',
-        title: 'Web Development Fundamentals',
-        category: 'Technology',
-        progress: 100,
-        completedAt: '2023-10-15T08:30:00Z',
-        lastAccessed: '2023-10-15T08:30:00Z',
-        duration: 30,
-        instructor: 'John Doe',
-        enrolled: true,
-        image: '/api/placeholder/300/200',
-        description: 'Learn the basics of HTML, CSS, and JavaScript to build modern websites.'
-      },
-      {
-        id: 2,
-        courseName: 'Data Science with Python',
-        title: 'Data Science with Python',
-        category: 'Science',
-        progress: 45,
-        lastAccessed: '2023-11-18T14:20:00Z',
-        duration: 45,
-        instructor: 'Jane Smith',
-        enrolled: true,
-        image: '/api/placeholder/300/200',
-        description: 'Master data analysis, visualization, and machine learning with Python.'
-      }
-    ];
-  };
+  // const getSampleEnrolledCourses = () => {
+  //   return [
+  //     {
+  //       id: 1,
+  //       courseName: 'Web Development Fundamentals',
+  //       title: 'Web Development Fundamentals',
+  //       category: 'Technology',
+  //       progress: 100,
+  //       completedAt: '2023-10-15T08:30:00Z',
+  //       lastAccessed: '2023-10-15T08:30:00Z',
+  //       duration: 30,
+  //       instructor: 'John Doe',
+  //       enrolled: true,
+  //       image: '/api/placeholder/300/200',
+  //       description: 'Learn the basics of HTML, CSS, and JavaScript to build modern websites.'
+  //     },
+  //     {
+  //       id: 2,
+  //       courseName: 'Data Science with Python',
+  //       title: 'Data Science with Python',
+  //       category: 'Science',
+  //       progress: 45,
+  //       lastAccessed: '2023-11-18T14:20:00Z',
+  //       duration: 45,
+  //       instructor: 'Jane Smith',
+  //       enrolled: true,
+  //       image: '/api/placeholder/300/200',
+  //       description: 'Master data analysis, visualization, and machine learning with Python.'
+  //     }
+  //   ];
+  // };
 
   const handleContinueLearning = async (courseId) => {
     try {

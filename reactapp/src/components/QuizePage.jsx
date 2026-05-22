@@ -1,216 +1,537 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { coursesAPI } from './api'; // Import your API functions
+import { coursesAPI } from '../services/api';
 import './QuizePage.css';
 
 const QuizPage = () => {
-  const { courseId } = useParams();
-  const navigate = useNavigate();
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState({});
-  const [quizCompleted, setQuizCompleted] = useState(false);
-  const [score, setScore] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Sample quiz data
-  const sampleQuizzes = {
-    1: {
-      courseId: 1,
-      courseName: 'Web Development Fundamentals',
-      questions: [
-        {
-          id: 1,
-          question: "What is the main purpose of HTML?",
-          options: [
-            "Styling web pages",
-            "Defining structure of web content",
-            "Adding interactivity to websites",
-            "Database management"
-          ],
-          correctAnswer: 1
-        },
-        {
-          id: 2,
-          question: "Which CSS property is used to change text color?",
-          options: [
-            "font-color",
-            "text-color",
-            "color",
-            "text-style"
-          ],
-          correctAnswer: 2
-        },
-        {
-          id: 3,
-          question: "JavaScript is primarily used for:",
-          options: [
-            "Styling web pages",
-            "Server-side programming only",
-            "Adding interactivity to web pages",
-            "Database management"
-          ],
-          correctAnswer: 2
+    const { courseId } = useParams();
+    const navigate = useNavigate();
+
+    const [quiz, setQuiz] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const [currentQuestion, setCurrentQuestion] = useState(0);
+    const [answers, setAnswers] = useState({});
+
+    const [score, setScore] = useState(0);
+    const [quizCompleted, setQuizCompleted] = useState(false);
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+
+        loadQuiz();
+
+    }, []);
+
+    const loadQuiz = async () => {
+
+        try {
+
+            const course =
+                await coursesAPI.getById(courseId);
+
+            const questions =
+                (course.quizQuestions || []).map(
+                    (question, index) => ({
+                        id: index + 1,
+                        question: question,
+
+                        options: [
+                            "Option A",
+                            "Option B",
+                            "Option C",
+                            "Option D"
+                        ],
+
+                        correctAnswer: 0
+                    })
+                );
+
+            setQuiz({
+
+                courseId: course.id,
+                courseName: course.title,
+                questions
+
+            });
+
         }
-      ]
-    },
-    // Add quizzes for other courses as needed
-  };
+        catch (error) {
 
-  const quiz = sampleQuizzes[courseId] || sampleQuizzes[1];
+            console.error(error);
 
-  const handleAnswerSelect = (questionId, answerIndex) => {
-    setAnswers(prev => ({...prev, [questionId]: answerIndex}));
-  };
+        }
+        finally {
 
-  const handleNext = () => {
-    if (currentQuestion < quiz.questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
-    } else {
-      calculateScore();
-      setQuizCompleted(true);
-    }
-  };
+            setLoading(false);
 
-  const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1);
-    }
-  };
+        }
 
-  const calculateScore = () => {
-    let calculatedScore = 0;
-    quiz.questions.forEach((question) => {
-      if (answers[question.id] === question.correctAnswer) {
-        calculatedScore++;
-      }
-    });
-    setScore(calculatedScore);
-  };
+    };
 
-  const updateProgressInBackend = async (courseId, newProgress) => {
-    try {
-      // Get current progress from backend
-      const currentProgressData = await coursesAPI.getProgress(courseId);
-      const currentProgress = currentProgressData?.progress || 0;
-      
-      // Only update if the new progress is higher than current progress
-      if (newProgress > currentProgress) {
-        await coursesAPI.updateProgress(courseId, newProgress);
-        console.log(`Progress updated to ${newProgress}% for course ${courseId}`);
-      }
-    } catch (error) {
-      console.error('Failed to update progress in backend:', error);
-      // You might want to handle this error more gracefully
-    }
-  };
+    const handleAnswerSelect =
+        (questionId, answer) => {
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      const percentage = (score / quiz.questions.length) * 100;
-      
-      // Only update progress if quiz was passed (70% or higher)
-      if (percentage >= 70) {
-        // Calculate new progress (current progress + 20%, max 100%)
-        const currentProgressResponse = await coursesAPI.getProgress(parseInt(courseId));
-        const currentProgress = currentProgressResponse?.progress || 0;
-        const newProgress = Math.min(currentProgress + 20, 100);
-        
-        // Update progress in backend
-        await updateProgressInBackend(parseInt(courseId), newProgress);
-      }
-      
-      // Navigate back to My Learning page with quiz results
-      navigate('/mylearning', { 
-        state: { 
-          quizCompleted: true, 
-          courseId: parseInt(courseId), 
-          score: score, 
-          total: quiz.questions.length,
-          percentage: percentage
-        } 
-      });
-    } catch (error) {
-      console.error('Error submitting quiz:', error);
-      alert('Failed to submit quiz. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+            setAnswers(prev => ({
 
-  if (quizCompleted) {
-    return (
-      <div className="quiz-page">
-        <div className="quiz-container">
-          <div className="quiz-results">
-            <h2>Quiz Results</h2>
-            <div className="score-display">
-              <h3>Your Score: {score}/{quiz.questions.length}</h3>
-              <p>{Math.round((score / quiz.questions.length) * 100)}%</p>
+                ...prev,
+
+                [questionId]: answer
+
+            }));
+
+        };
+
+    const handlePrevious = () => {
+
+        if (currentQuestion > 0) {
+
+            setCurrentQuestion(
+                prev => prev - 1
+            );
+
+        }
+
+    };
+
+    const handleNext = () => {
+
+        if (
+            currentQuestion <
+            quiz.questions.length - 1
+        ) {
+
+            setCurrentQuestion(
+                prev => prev + 1
+            );
+
+        }
+        else {
+
+            finishQuiz();
+
+        }
+
+    };
+
+    const finishQuiz = () => {
+
+        let total = 0;
+
+        quiz.questions.forEach(question => {
+
+            if (
+
+                answers[question.id]
+                ===
+                question.correctAnswer
+
+            ) {
+
+                total++;
+
+            }
+
+        });
+
+        setScore(total);
+        setQuizCompleted(true);
+
+    };
+
+    const updateProgress = async () => {
+
+        try {
+
+            const percentage =
+                Math.round(
+                    (score /
+                        quiz.questions.length)
+                    * 100
+                );
+
+            if (percentage < 70) {
+
+                return;
+
+            }
+
+            const token =
+                localStorage.getItem("token");
+
+            const user =
+                JSON.parse(
+                    localStorage.getItem("user")
+                );
+
+            await fetch(
+
+                "http://localhost:8080/api/courses/progress",
+
+                {
+
+                    method: "POST",
+
+                    headers: {
+
+                        "Content-Type":
+                            "application/json",
+
+                        "Authorization":
+                            `Bearer ${token}`
+
+                    },
+
+                    body:
+
+                        JSON.stringify({
+
+                            courseId:
+
+                                parseInt(courseId),
+
+                            studentEmail:
+
+                                user.email,
+
+                            progressPercentage:
+
+                                20
+
+                        })
+
+                }
+
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Progress update failed",
+                error
+            );
+
+        }
+
+    };
+
+    const handleSubmit = async () => {
+
+        setIsSubmitting(true);
+
+        try {
+
+            await updateProgress();
+
+            navigate(
+
+                "/mylearning",
+
+                {
+
+                    state: {
+
+                        quizCompleted: true
+
+                    }
+
+                }
+
+            );
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+        }
+        finally {
+
+            setIsSubmitting(false);
+
+        }
+
+    };
+
+    if (loading) {
+
+        return (
+
+            <div className="quiz-page">
+
+                <div className="quiz-container">
+
+                    <h2>
+                        Loading Quiz...
+                    </h2>
+
+                </div>
+
             </div>
-            <button 
-              className="btn btn-primary" 
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Submitting...' : 'Return to My Learning'}
-            </button>
-          </div>
+
+        );
+
+    }
+
+    if (
+
+        !quiz ||
+
+        quiz.questions.length === 0
+
+    ) {
+
+        return (
+
+            <div className="quiz-page">
+
+                <div className="quiz-container">
+
+                    <h2>
+                        No Quiz Available
+                    </h2>
+
+                </div>
+
+            </div>
+
+        );
+
+    }
+
+    const currentQ =
+        quiz.questions[currentQuestion];
+
+    if (quizCompleted) {
+
+        const percentage =
+            Math.round(
+                (score /
+                    quiz.questions.length)
+                * 100
+            );
+
+        return (
+
+            <div className="quiz-page">
+
+                <div className="quiz-container">
+
+                    <div className="quiz-results">
+
+                        <h2>
+                            Quiz Completed
+                        </h2>
+
+                        <div className="score-display">
+
+                            <h3>
+
+                                Score :
+
+                                {score}
+
+                                /
+
+                                {quiz.questions.length}
+
+                            </h3>
+
+                            <p>
+
+                                {percentage}%
+
+                            </p>
+
+                        </div>
+
+                        <button
+
+                            className="btn-submit"
+
+                            onClick={handleSubmit}
+
+                            disabled={isSubmitting}
+
+                        >
+
+                            {
+
+                                isSubmitting
+
+                                    ?
+
+                                    "Saving..."
+
+                                    :
+
+                                    "Return To Learning"
+
+                            }
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        );
+
+    }
+
+    return (
+
+        <div className="quiz-page">
+
+            <div className="quiz-container">
+
+                <div className="quiz-header">
+
+                    <h2>
+
+                        {quiz.courseName}
+
+                    </h2>
+
+                    <p>
+
+                        Question
+
+                        {
+
+                            currentQuestion + 1
+
+                        }
+
+                        /
+
+                        {
+
+                            quiz.questions.length
+
+                        }
+
+                    </p>
+
+                </div>
+
+                <div className="quiz-question">
+
+                    <h3>
+
+                        {currentQ.question}
+
+                    </h3>
+
+                    <div className="quiz-options">
+
+                        {
+
+                            currentQ.options.map(
+
+                                (option, index) => (
+
+                                    <label
+
+                                        key={index}
+
+                                        className="quiz-option"
+
+                                    >
+
+                                        <input
+
+                                            type="radio"
+
+                                            checked={
+
+                                                answers[currentQ.id]
+
+                                                ===
+
+                                                index
+
+                                            }
+
+                                            onChange={() =>
+
+                                                handleAnswerSelect(
+
+                                                    currentQ.id,
+
+                                                    index
+
+                                                )
+
+                                            }
+
+                                        />
+
+                                        {option}
+
+                                    </label>
+
+                                )
+
+                            )
+
+                        }
+
+                    </div>
+
+                </div>
+
+                <div className="quiz-navigation">
+
+                    <button
+
+                        onClick={handlePrevious}
+
+                        disabled={currentQuestion === 0}
+
+                    >
+
+                        Previous
+
+                    </button>
+
+                    <button
+
+                        onClick={handleNext}
+
+                    >
+
+                        {
+
+                            currentQuestion ===
+
+                                quiz.questions.length - 1
+
+                                ?
+
+                                "Finish"
+
+                                :
+
+                                "Next"
+
+                        }
+
+                    </button>
+
+                </div>
+
+            </div>
+
         </div>
-      </div>
+
     );
-  }
 
-  const currentQ = quiz.questions[currentQuestion];
-
-  return (
-    <div className="quiz-page">
-      <div className="quiz-container">
-        <div className="quiz-header">
-          <h2>{quiz.courseName} - Quiz</h2>
-          <p>Question {currentQuestion + 1} of {quiz.questions.length}</p>
-        </div>
-
-        <div className="quiz-question">
-          <h3>{currentQ.question}</h3>
-          <div className="quiz-options">
-            {currentQ.options.map((option, optIndex) => (
-              <label key={optIndex} className="quiz-option">
-                <input
-                  type="radio"
-                  name={`question-${currentQ.id}`}
-                  value={optIndex}
-                  onChange={() => handleAnswerSelect(currentQ.id, optIndex)}
-                  checked={answers[currentQ.id] === optIndex}
-                />
-                {option}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div className="quiz-navigation">
-          <button 
-            className="btn btn-outline" 
-            onClick={handlePrevious}
-            disabled={currentQuestion === 0}
-          >
-            Previous
-          </button>
-          <button className="btn btn-primary" onClick={handleNext}>
-            {currentQuestion === quiz.questions.length - 1 ? 'Finish Quiz' : 'Next'}
-          </button>
-        </div>
-
-        <div className="quiz-progress">
-          <div 
-            className="progress-bar" 
-            style={{width: `${((currentQuestion + 1) / quiz.questions.length) * 100}%`}}
-          ></div>
-        </div>
-      </div>
-    </div>
-  );
 };
 
 export default QuizPage;
